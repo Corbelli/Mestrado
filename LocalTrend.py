@@ -1,7 +1,7 @@
 import EspaceState as EE
 import numpy as np
 
-class LocalLevel:
+class LocalTrend:
 
     def __init__(self):
         self.EE = EE.EspaceState()

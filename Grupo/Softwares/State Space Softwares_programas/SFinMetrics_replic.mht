@@ -1,0 +1,501 @@
+From: <Salvo pelo Windows Internet Explorer 8>
+Subject: 
+Date: Wed, 18 May 2011 19:14:47 -0300
+MIME-Version: 1.0
+Content-Type: text/html;
+	charset="Windows-1252"
+Content-Transfer-Encoding: quoted-printable
+Content-Location: http://www.jstatsoft.org/v41/i05/supp/1
+X-MimeOLE: Produced By Microsoft MimeOLE V6.00.2900.5994
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META content=3D"text/html; charset=3Dwindows-1252" =
+http-equiv=3DContent-Type>
+<META name=3DGENERATOR content=3D"MSHTML 8.00.6001.19019"></HEAD>
+<BODY><PRE>## stateSpaceNile.ssc
+## Examples used in "State Space Modeling Using SsfPack in S+FinMetrics =
+3.0" prepared for the special issue on state space modeling in
+## the Journal of Statistical Software.
+##=20
+## created: April 6, 2010 by Eric Zivot
+## Revision history
+##	April 11, 2010
+##		Fixed estimation of local level model with concentrated =
+log-likelihood function
+##
+module(finmetrics)
+options(digits =3D 4, width=3D60)
+#
+# Nile River Data
+# nile.dat is included in S+FinMetrics
+
+class(nile.dat)
+start(nile.dat)
+end(nile.dat)
+plot(nile.dat, reference.grid=3DF, plot.args=3Dlist(lwd=3D3))
+
+#=20
+# Ex. local level model
+#
+# y(t) =3D a(t) + e(t), e(t) ~ N(0,s2e)
+# a(t+1) =3D a(t) =3D n(t), n(t) ~ N(0,s2n)
+# a(1) ~ N(a1,P1)
+#=20
+
+# construct state space form calibrated to Nile river data. Parameters
+# are MLEs
+sigma.e =3D sqrt(15099)
+sigma.n =3D sqrt(1469.1)
+a1 =3D 0
+P1 =3D -1
+ssf.ll.list =3D list(mPhi=3Das.matrix(c(1,1)),
+mOmega=3Ddiag(c(sigma.n^2,sigma.e^2)),
+mSigma=3Das.matrix(c(P1,a1)))
+ssf.ll.list
+
+ssf.ll =3D CheckSsf(ssf.ll.list)
+class(ssf.ll)
+names(ssf.ll)
+ssf.ll
+
+# use GetSsfStsm=20
+
+ssf.stsm =3D GetSsfStsm(irregular=3Dsqrt(15099),level=3Dsqrt(1469.1))
+class(ssf.stsm)
+ssf.stsm
+
+#
+# simulate data using SsfSim
+#
+
+args(SsfSim)
+
+# simulate local level model
+
+ssf.ll.list$mSigma[2] =3D 1120
+set.seed(112)
+ll.sim =3D SsfSim(ssf.ll.list,n=3D100)
+class(ll.sim)
+colIds(ll.sim)
+
+tsplot(ll.sim, lwd=3D2, col=3Dc(1,5), lty=3Dc(1,4))
+legend(0,1350,legend=3Dc("State","Response"), lwd=3D2, lty=3Dc(1,4), =
+col=3Dc(1,5))
+
+#
+# Algorithms: Kalman filter, moment estimation, conditional density =
+estimation
+# Kalman smoother, moment smoother
+#
+
+# Kalman Filter for local level model for Nile river data
+# create data
+y.ll =3D seriesData(nile.dat)
+
+# Kalman filtering
+args(KalmanFil)
+
+KalmanFil.ll =3D KalmanFil(nile.dat,ssf.ll,task=3D"STFIL")
+class(KalmanFil.ll)
+names(KalmanFil.ll)
+KalmanFil.ll$mOut
+# show filtered estimates
+KalmanFil.ll$mEst
+
+# plot method
+plot(KalmanFil.ll)
+
+# Kalman smoother
+args(KalmanSmo)
+KalmanSmo.ll =3D KalmanSmo(KalmanFil.ll,ssf.ll)
+class(KalmanSmo.ll)
+names(KalmanSmo.ll)
+plot(KalmanSmo.ll,layout=3Dc(1,2), type=3D"l", lwd=3D2, col=3D"blue")
+
+
+# SsfMomentEst
+# valid tasks are
+# STSMO	state smoothing
+# STPRED	state prediction
+# STFIL	state filtering
+# DSSMO	disturbance smoothing
+
+# moment filtering with variances
+FilteredEst.ll =3D SsfMomentEst(nile.dat,ssf.ll,task=3D"STFIL")
+class(FilteredEst.ll)
+names(FilteredEst.ll)
+FilteredEst.ll$state.moment[1:5]
+FilteredEst.ll$response.moment[1:5]
+
+# note: plot does not show std error bands
+plot(FilteredEst.ll,layout=3Dc(1,2), type=3D"l", lwd=3D2, col=3D"blue")
+
+# plot with standard error bands
+
+upper.state =3D FilteredEst.ll$state.moment +=20
+              1.645*sqrt(FilteredEst.ll$state.variance)
+lower.state =3D FilteredEst.ll$state.moment -=20
+              1.645*sqrt(FilteredEst.ll$state.variance)
+tmp.ts =3D =
+timeSeries(data=3Dcbind(FilteredEst.ll$state.moment,upper.state,lower.sta=
+te),
+                    positions=3DFilteredEst.ll$positions)
+colIds(tmp.ts) =3D c("state.moment", "upper", "lower")
+plot(tmp.ts, reference.grid=3DFALSE, plot.args=3Dlist(lwd=3D3, =
+lty=3Dc(1, 2, 2), col=3Dc("blue", "red", "red")))
+
+lty=3Dc(1,2,2),ylab=3D"filtered state")
+
+#  moment smoothing
+SmoothedEst.ll =3D SsfMomentEst(nile.dat,ssf.ll,task=3D"STSMO")
+SmoothedEst.ll$state.moment[1:5]
+SmoothedEst.ll$response.moment[1:5]
+
+plot(SmoothedEst.ll, type=3D"l", lwd=3D2, col=3D"blue")
+
+# plot with standard error bands
+
+upper.state =3D SmoothedEst.ll$state.moment +=20
+              1.645*sqrt(SmoothedEst.ll$state.variance)
+lower.state =3D SmoothedEst.ll$state.moment -=20
+              1.645*sqrt(SmoothedEst.ll$state.variance)
+
+tmp2.ts =3D =
+timeSeries(data=3Dcbind(SmoothedEst.ll$state.moment,upper.state,lower.sta=
+te),
+                    positions=3DFilteredEst.ll$positions)
+colIds(tmp2.ts) =3D c("state.moment", "upper", "lower")
+plot(tmp2.ts, reference.grid=3DFALSE, plot.args=3Dlist(lwd=3D3, =
+lty=3Dc(1, 2, 2), col=3Dc("blue", "red", "red")))
+
+
+# note: SmoothedEst.ll2$state.moment is identical to
+# SmoothedEst.ll$state
+
+
+# SsfCondDens
+# returns smoothed estimates of state vector and response
+# note: only state smoothing (task=3D"STSMO") and disturbance smoothing
+# (task=3D"DSSMO") are supported
+
+smoothedEst2.ll =3D SsfCondDens(nile.dat,ssf.ll,task=3D"STSMO")
+class(smoothedEst2.ll)
+names(smoothedEst2.ll)
+smoothedEst2.ll$state[1:5]
+smoothedEst2.ll$response[1:5]
+
+plot(smoothedEst2.ll)
+
+# note: in this example=20
+# smoothedEst.ll$state =3D smoothedEst2.ll$response
+smoothedEst2.ll$state[1:5]
+smoothedEst2.ll$response[1:5]
+
+# disturbance smoothing
+disturbEst.ll =3D SsfMomentEst(nile.dat,ssf.ll,task=3D"DSSMO")
+
+# moment prediction
+
+# append 10 missing values to the end of nile.dat
+td.old =3D positions(nile.dat)
+td.new =3D timeCalendar(y=3D1971:1980, format=3Dtd.old@format)
+td =3D concat(td.old, td.new)
+nile.dat.new =3D =
+timeSeries(data=3Dconcat(seriesData(nile.dat),rep(NA,10)), =
+positions=3Dtd)
+
+PredictedEst.ll =3D SsfMomentEst(nile.dat.new,ssf.ll,task=3D"STPRED")
+nile.dat.fcst =3D PredictedEst.ll$response.moment
+fcst.var =3D PredictedEst.ll$response.variance
+upper =3D nile.dat.fcst + 0.6745*sqrt(fcst.var)
+lower =3D nile.dat.fcst - 0.6745*sqrt(fcst.var)
+tmp3.ts =3D timeSeries(data=3Dcbind(seriesData(nile.dat.new), =
+nile.dat.fcst, upper, lower), positions=3Dtd)
+plot(tmp3.ts[-1,], reference.grid=3DFALSE,=20
+     plot.args=3Dlist(lwd=3D3, lty=3Dc(4,1,2,2), =
+col=3Dc("black","blue","red","red")))
+legend(x=3D0, y=3D650, legend=3Dc("Actual", "Predicted", "50% CI"),=20
+       lwd=3D3, lty=3Dc(4,1,2), col=3Dc("black","blue","red"))
+
+# use new forecast function
+nile.dat.fcst2 =3D SsfForecast(nile.dat, ssf.ll, n.predict =3D 10)
+class(nile.dat.fcst2)
+summary(nile.dat.fcst2)
+plot(nile.dat.fcst2, xold=3Dnile.dat, width=3D0.6745, n.old=3D10)
+
+#
+# mle of local level model
+#
+
+ll.mod =3D function(parm) {
+# parm[1] =3D sig2.n, parm[2] =3D sig2.e
+	parm =3D sqrt(parm)
+	ssf.mod =3D GetSsfStsm(irregular=3Dparm[2],
+							  level=3Dparm[1])
+	CheckSsf(ssf.mod)
+}
+ll.start =3D c(1000,10000)
+names(ll.start) =3D c("sig2.n","sig2.e")
+KalmanFil(nile.dat,ll.mod(ll.start),task=3D"KFLIK")
+
+ll.mle =3D SsfFit(ll.start, nile.dat, "ll.mod", lower=3D0)=20
+class(ll.mle)
+names(ll.mle)
+ll.mle
+# signal-to-noise ratio
+q.mle =3D ll.mle$parameters[1]/ll.mle$parameters[2]
+q.mle
+summary(ll.mle)
+KalmanFil(nile.dat,ll.mod(ll.mle$parameters),task=3D"KFLIK")
+
+ll.modc =3D function(parm) {
+## parm =3D 0.5*log(q) =3D log(sqrt(q))=20
+## q =3D exp(2*parm)
+   parm =3D exp(2*parm)
+	ssf.llc =3D GetSsfStsm(irregular=3D1, level=3Dsqrt(parm))
+	CheckSsf(ssf.llc)
+}
+
+llc.start =3D 0
+names(llc.start) =3D "0.5*log(q)"
+llc.mle =3D SsfFit(llc.start,nile.dat,"ssf.ll.modc",conc=3DT)
+summary(llc.mle)
+
+kf.llc =3D KalmanFil(nile.dat, =
+ll.modc(llc.mle$parameters),task=3D"KFLIK")
+kf.ll$dVar
+
+# retrieve estimate of q =3D sig2.n/sig2.e
+q.mle.c =3D exp(2*llc.mle$parameters)
+q.mle.c
+
+#########################################################################=
+######################################
+# TVP regression model
+#########################################################################=
+######################################
+
+## example state space for TVP regression model
+set.seed(123)
+X.mat =3D cbind(1,rnorm(5))
+Phi.t =3D rbind(diag(2),rep(0,2))
+Omega =3D diag(c((.01)^2,(.05)^2,(.1)^2))
+J.Phi =3D matrix(-1,3,2)
+J.Phi[3,1] =3D 1
+J.Phi[3,2] =3D 2
+Sigma =3D -Phi.t
+ssf.tvp =3D list(mPhi=3DPhi.t,
+mOmega=3DOmega,
+mJPhi=3DJ.Phi,
+mSigma=3DSigma,
+mX=3DX.mat)
+ssf.tvp
+
+#
+# mle of time varying CAPM
+#
+
+# function to compute state space for TVP regression
+tvp.mod =3D function(parm,mX=3DNULL) {
+	parm =3D exp(parm)
+	ssf.tvp =3D GetSsfReg(mX=3DmX)
+	diag(ssf.tvp$mOmega) =3D parm
+	CheckSsf(ssf.tvp)
+}
+
+tvp.start =3D c(0,0,0)
+names(tvp.start) =3D c("ln(s2.alpha)","ln(s2.beta)","ln(s2.y)")
+
+y.capm =3D as.matrix(seriesData(excessReturns.ts[,"MSFT"]))
+X.mat =3D cbind(1,as.matrix(seriesData(excessReturns.ts[,"SP500"])))
+tvp.mle =3D SsfFit(tvp.start,y.capm,"tvp.mod",mX=3DX.mat)
+summary(tvp.mle)
+
+# full sample regression
+capm.ols =3D OLS(MSFT ~ SP500, data=3DexcessReturns.ts)
+summary(capm.ols)
+alpha.full =3D coef(capm.ols)[1]
+beta.full =3D coef(capm.ols)[2]
+
+# compute mles of transformed parameters
+# and delta method standard errors
+tvp2.mle =3D tvp.mle
+tvp2.mle$parameters =3D exp(tvp.mle$parameters/2)	=09
+names(tvp2.mle$parameters) =3D c("s.alpha","s.beta","s.y")
+dg =3D diag(tvp2.mle$parameters/2)
+tvp2.mle$vcov =3D dg%*%tvp.mle$vcov%*%dg
+summary(tvp2.mle)
+
+
+# compute smoothed state estimates
+smoothedEst.tvp =3D SsfCondDens(y.capm,
+tvp.mod(tvp.mle$parameters,mX=3DX.mat),
+task=3D"STSMO")
+plot(smoothedEst.tvp,strip.text=3Dc("alpha(t)",
+"beta(t)","Expected returns"),main=3D"Smoothed Estimates", =
+scales=3D"free")
+
+
+# compute filtered and smoothed estimates and plot results
+
+FilteredEst.tvp =3D SsfMomentEst(y.capm,
+tvp.mod(tvp.mle$parameters,mX=3DX.mat),
+task=3D"STFIL")
+
+SmoothedEst.tvp =3D SsfMomentEst(y.capm,
+tvp.mod(tvp.mle$parameters,mX=3DX.mat),
+task=3D"STSMO")
+
+SmoothedEst.tvp$state.moment[2,1] =3D SmoothedEst.tvp$state.moment[1,1]=20
+SmoothedEst.tvp$state.variance[2,1] =3D =
+SmoothedEst.tvp$state.variance[1,1]=20
+
+
+upper.state =3D SmoothedEst.tvp$state.moment + =
+sqrt(SmoothedEst.tvp$state.variance)
+lower.state =3D SmoothedEst.tvp$state.moment - =
+sqrt(SmoothedEst.tvp$state.variance)
+
+smoothed.ts =3D timeSeries(pos=3Dpositions(excessReturns.ts),=20
+                         data=3Dcbind(SmoothedEst.tvp$state.moment, =
+upper.state, lower.state))
+colIds(smoothed.ts) =3D c("alpha(t)", "beta(t)", "upper.alpha", =
+"upper.beta", "lower.alpha", "lower.beta")
+
+par(mfrow=3Dc(2,1))
+plot(smoothed.ts[,c("alpha(t)", "upper.alpha", "lower.alpha")], =
+reference.grid=3DF, main=3D"alpha(t)",
+     plot.args=3Dlist(col=3Dc("black", "red", "red"), lwd=3D2, =
+lty=3Dc(1,2,2)))
+abline(h=3Dalpha.full, col=3D"blue", lwd=3D2, lty=3D3)
+legend(0, 0.005, legend=3Dc("TVP", "OLS"), col=3Dc("black", "blue"), =
+lwd=3D2, lty=3Dc(1, 3))
+
+plot(smoothed.ts[,c("beta(t)", "upper.beta", "lower.beta")], =
+reference.grid=3DF, main=3D"beta(t)",
+     plot.args=3Dlist(col=3Dc("black", "red", "red"), lwd=3D2, =
+lty=3Dc(1,2,2)))
+abline(h=3Dbeta.full, col=3D"blue", lwd=3D2, lty=3D3)
+par(mfrow=3Dc(1,1))
+
+
+##
+## Term Structure Example
+##
+
+# show fama.bliss data
+
+plot(fama.bliss, reference.grid=3DF,
+     plot.args=3Dlist(lty=3Dc(1,2,3,4), col=3D1:4, lwd=3D2))
+legend(0,0.16,legend=3DcolIds(fama.bliss),lty=3Dc(1,2,3,4), col=3D1:4, =
+lwd=3D2)
+
+# estimate Vasicek model using Fama-Bliss data
+
+vasicek.ssf =3D function(param, tau=3DNULL, freq=3D1/52)
+{
+## 1. Check for valid input.
+  if (length(param) &lt; 5)
+    stop("param must have length greater than 4.")
+  N =3D length(param) - 4
+  if (length(tau) !=3D N)
+    stop("Length of tau is inconsistent with param.")
+  names(param) =3D c("kappa", "theta", "sigma", "lambda",=20
+                    paste("s",1:N,sep=3D""))
+## 2. Extract parameters and impose constraints.
+  Kappa =3D exp(param[1])  ## Kappa &gt; 0
+  Theta =3D exp(param[2])  ## Theta &gt; 0
+  Sigma =3D exp(param[3])  ## Sigma &gt; 0
+  Lamda =3D param[4]
+  Var   =3D exp(param[1:N+4])
+## 3. Compute Gamma, A, and B.
+  Gamma =3D Theta + Sigma * Lamda / Kappa - Sigma^2 / (2 * Kappa^2)
+  B =3D (1 - exp(-Kappa * tau)) / Kappa
+  A =3D Gamma * (B - tau) - Sigma^2 * B^2 / (4 * Kappa)
+## 4. Compute a, b, and Phi.
+  a =3D Theta * (1 - exp(-Kappa * freq))
+  b =3D exp(-Kappa * freq)
+  Phi =3D (Sigma^2 / (2 * Kappa)) * (1 - exp(-2 * Kappa * freq))
+## 5. Compute the state space form.
+  mDelta =3D matrix(c(a, -A/tau), ncol=3D1)
+  mPhi =3D matrix(c(b, B/tau), ncol=3D1)
+  mOmega =3D diag(c(Phi, Var^2))
+## 6. Duan and Simonato used this initial setting.
+  A0 =3D Theta
+  P0 =3D Sigma * Sigma / (2*Kappa)
+  mSigma =3D matrix(c(P0, A0), ncol=3D1)
+## 7. Return state space form.
+  ssf.mod =3D list(mDelta=3DmDelta, mPhi=3DmPhi, mOmega=3DmOmega, =
+mSigma=3DmSigma)
+  CheckSsf(ssf.mod)
+}
+
+##
+## Estimate model using Fama-Bliss Data
+##
+start.vasicek =3D c(log(0.1), log(0.06), log(0.02), 0.3, log(0.003),=20
+log(0.001), log(0.003), log(0.01))
+names(start.vasicek) =3D c("ln.kappa","ln.theta","ln.sigma","lamda",
+							"ln.sig.3M","ln.sig.6M","ln.sig.12M","ln.sig.60M")				=09
+start.tau =3D c(0.25, 0.5, 1, 5)=09
+ans.vasicek =3D SsfFit(start.vasicek, fama.bliss, vasicek.ssf,=20
+               tau=3Dstart.tau, freq=3D1/12, trace=3DT,
+               control=3Dnlminb.control(abs.tol=3D1e-6, rel.tol=3D1e-6,=20
+               x.tol=3D1e-6, eval.max=3D1000, iter.max=3D500))
+ssf.fit =3D =
+vasicek.ssf(ans.vasicek$parameters,tau=3Dstart.tau,freq=3D1/12)
+# tmp =3D ans.vasicek$parameters
+# ans.vasicek$parameters =3D tmp
+ans.vasicek$parameters[-4] =3D exp(ans.vasicek$parameters[-4])
+names(ans.vasicek$parameters) =3D c("kappa","theta","sigma","lamda",
+							"sig.3M","sig.6M","sig.12M","sig.60M")
+dg =3D ans.vasicek$parameters; dg[4] =3D 1
+ans.vasicek$vcov =3D diag(dg) %*% ans.vasicek$vcov %*% diag(dg)
+summary(ans.vasicek)
+
+ssf.fit =3D =
+vasicek.ssf(ans.vasicek$parameters,tau=3Dstart.tau,freq=3D1/12)
+
+##
+## 9. smoothed estimates of term-structure
+##
+m.s =3D SsfCondDens(fama.bliss, ssf.fit)
+r.s =3D timeSeries(data=3Dm.s$state,pos=3Dm.s$positions)
+y.s =3D timeSeries(data=3Dm.s$response,pos=3Dm.s$positions)
+
+plot(r.s,main=3D"Smoothed Estimate of Short Rate", reference.grid=3DF,
+     plot.args=3Dlist(col=3D"blue", lwd=3D2))
+par(mfrow=3Dc(2,2))
+plot(fama.bliss[,1]-y.s[,1],main=3D"Actual minus smoothed: 3M", =
+reference.grid=3DF,
+     plot.args=3Dlist(lwd=3D2))
+abline(h=3D0)
+plot(fama.bliss[,2]-y.s[,2],main=3D"Actual minus smoothed: 6M", =
+reference.grid=3DF,
+     plot.args=3Dlist(lwd=3D2))
+abline(h=3D0)
+plot(fama.bliss[,3]-y.s[,3],main=3D"Actual minus smoothed: 12M", =
+reference.grid=3DF,
+     plot.args=3Dlist(lwd=3D2))
+abline(h=3D0)
+plot(fama.bliss[,4]-y.s[,4],main=3D"Actual minus smoothed: 60M", =
+reference.grid=3DF,
+     plot.args=3Dlist(lwd=3D2))
+abline(h=3D0)
+par(mfrow=3Dc(1,1))
+
+
+##
+## 10. Diagnostics on standardized innovations
+##
+
+summaryStats(KalmanFil(fama.bliss,ssf.fit)$std.innov)
+autocorTest(KalmanFil(fama.bliss,ssf.fit)$std.innov)
+
+
+
+
+
+
+</PRE></BODY></HTML>
