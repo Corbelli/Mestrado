@@ -19,8 +19,19 @@ import Seasonal
 import SeasonMQO
 #%%
 seas = Seasonal.Seasonal()
-y = seas.simulate(50)
+y = seas.simulate(20)
 plt.plot(y)
 #%%
-reg = SeasonMQO.MQOSeasonal()
+reg = SeasonMQO.MQOSeasonal(5)
 dummie = reg.filter_dummie(y)
+dummie =[dummie.item(i) for i in range(len(y))]
+plt.plot(dummie)
+plt.plot(y)
+plt.savefig('dummie.png', bbox_inches='tight')
+#%%
+reg = SeasonMQO.MQOSeasonal(5)
+dummie = reg.filter_trig(y)
+dummie =[dummie.item(i) for i in range(len(y))]
+plt.plot(dummie)
+plt.plot(y)
+plt.savefig('trig.png', bbox_inches='tight')

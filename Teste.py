@@ -17,19 +17,19 @@ import LocalTrend
 #%%
 llv = LocalLevel.LocalLevel()
 fu = LocalTrend.LocalLevel()
-y = fu.simulate(200)
+y = llv.simulate(20)
 sns.tsplot(y)
 #%%
 llv.fit(y)
 #%%
 #%%
-alpha = fu.filter(y)
+alpha = llv.filter(y)
 level = [value.item(0) for value in alpha['level']]
-phi   = [value.item(1) for value in alpha['level']]
+#phi   = [value.item(1) for value in alpha['level']]
 plt.plot(y, color = (0,0,1),label = 'serie')
 plt.plot(level, color = (1,0,0),label = 'nivel')
-plt.plot(phi, color = (0.7,0.3,0),label = 'phi')
-plt.plot(teste, color = (0,0,0),label = 'teste')
+#plt.plot(phi, color = (0.7,0.3,0),label = 'phi')
+#plt.plot(teste, color = (0,0,0),label = 'teste')
 plt.legend()
 #%%
 beta = fu.smooth(y)
