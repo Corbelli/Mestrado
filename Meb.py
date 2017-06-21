@@ -35,8 +35,8 @@ class Meb:
         self.r = np.matrix([[1,0,0],[0,1,0],[0,0,1],[0,0,0],[0,0,0]])
         self.q = np.matrix([[1,0,0],[0,1,0],[0,0,1]])
         self.h = np.matrix([1])
-        self.c = np.matrix([[0],[0],[0],[0],[0]]).T
-        self.d = np.matrix([[0],[0],[0],[0],[0]]).T
+        self.c = np.matrix([[0],[0],[0],[0],[0]])
+        self.d = np.matrix([0])
 
     def __init_params(self):
         params = {}
