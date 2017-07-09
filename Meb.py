@@ -45,17 +45,17 @@ class Meb:
         params['R'] = []
         params['Q'] = []
         params['Q'].append(
-            {'position':[0,0],'type':'positive','value':0}
+            {'position':[0,0],'type':'positive','value':-1.6}
         )
         params['Q'].append(
-            {'position':[1,1],'type':'positive','value':0}
+            {'position':[1,1],'type':'positive','value':-7.8}
         )
         params['Q'].append(
-            {'position':[2,2],'type':'positive','value':0}
+            {'position':[2,2],'type':'positive','value':4.5}
         )
         params['H'] = []
         params['H'].append(
-            {'position':[0,0],'type':'positive','value':0}
+            {'position':[0,0],'type':'positive','value':-4.5}
         )
         params['C'] = []
         params['D'] = []

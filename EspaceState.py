@@ -137,7 +137,7 @@ class EspaceState:
 
 	def get(self,name):
 		"""Retorna matriz do Sistema especificada por name"""
-		Mat = self.Mats[name]
+		Mat = self.Mats[name].astype(float)
 		for param in self.params[name] :
 			if param['type'] == 'positive' :
 				pos = param['position']
@@ -206,7 +206,7 @@ class EspaceState:
 		x = []
 		for i in range(10):
 			try:
-				res =  minimize(ll,np.random.normal(0,2,n_params),method = 'nelder-mead')
+				res =  minimize(ll,np.random.normal(0,2,n_params))
 				if res.fun < fun:
 					x = res.x	
 			except Exception as e:

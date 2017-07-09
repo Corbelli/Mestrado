@@ -1,4 +1,4 @@
-import EspaceState as EE
+import ExSpaceState as EE
 import numpy as np
 
 class LocalLevel:
@@ -8,7 +8,9 @@ class LocalLevel:
         self.__init_exatc()
         self.__init_params()
         self.__init_matrix()
-        self.EE.set_system(self.z,self.t,self.r,self.h,self.q,self.c,self.d,self.params)
+        z_func = lambda alpha,params : alpha
+        t_func = lambda alpha,params : alpha
+        self.EE.set_system(self.z,self.t,self.r,self.h,self.q,self.c,self.d,self.params,z_func,t_func)
         self.EE.set_init(self.burn,self.Pinf,self.Pstar)
 
     def filter(self,y):
@@ -41,15 +43,18 @@ class LocalLevel:
     def __init_params(self):
         params = {}
         params['Z'] = []
+        params['Z'].append(
+            {'position':[0,0],'value':0,'use':lambda alpha,value : 1}
+        )
         params['T'] = []
         params['R'] = []
         params['Q'] = []
         params['H'] = []
         params['Q'].append(
-            {'position':[0,0],'type':'positive','value':0}
+            {'position':[0,0],'value':0.5,'use':lambda alpha,value :np.exp(alpha.item(0)*value)}
         )
         params['H'].append(
-            {'position':[0,0],'type':'positive','value':0}
+            {'position':[0,0],'value':0.5,'use': lambda alpha,value:np.exp(alpha.item(0)*value)}
         )
         params['C'] = []
         params['D'] = []
